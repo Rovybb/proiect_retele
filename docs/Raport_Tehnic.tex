@@ -1,0 +1,163 @@
+% This is samplepaper.tex, a sample chapter demonstrating the
+% LLNCS macro package for Springer Computer Science proceedings;
+% Version 2.20 of 2017/10/04
+%
+\documentclass[runningheads]{llncs}
+%
+\usepackage{graphicx}
+\usepackage{enumitem}
+\usepackage[top=2cm, bottom=2cm, left=3cm, right=3cm]{geometry}
+% Used for displaying a sample figure. If possible, figure files should
+% be included in EPS format.
+%
+% If you use the hyperref package, please uncomment the following line
+% to display URLs in blue roman font according to Springer's eBook style:
+% \renewcommand\UrlFont{\color{blue}\rmfamily}
+
+\begin{document}
+%
+\title{Raport tehnic}
+%
+%\titlerunning{Abbreviated paper title}
+% If the paper title is too long for the running head, you can set
+% an abbreviated paper title here
+%
+\author{Babalean Robert\orcidID{0009-0004-9786-8777}}
+
+\institute{Universitatea "Alexandru Ioan Cuza", Facultatea de Informatica, Iasi}
+
+\maketitle              % typeset the header of the contribution
+%
+%
+%
+%
+\section{Introducere}
+
+\subsection{Viziune Generala}
+Aplicatia QuizzMax reprezinta o implementare client-server pentru un joc de intrebari cu suport pentru multiple conexiuni simultane. Scopul acestui proiect este de a oferi o experienta distractiva utilizatorilor, coordonand desfasurarea jocului intr-un mod fluid si competitiv.
+
+\subsection{Obiectivele Proiectului}
+
+\begin{itemize}[label=$\bullet$]
+    \item Implementarea unui server multithreading pentru gestionarea concurentei si a multiplelor conexiuni simultane.
+    \item Utilizarea protocolului TCP pentru asigurarea unei comunicsri stabile si ordonate intre server si clienti.
+    \item Dezvoltarea unei logici de joc interactive, inclusiv adresarea intrebarilor, evaluarea raspunsurilor si actualizarea punctajelor.
+    \item Gestionarea eficienta a situatiilor in care un client paraseste jocul, asigurand continuitatea acestuia pentru ceilalti participanti.
+    \item Crearea unei interfete placute si usor de interactionat pentru utilizator.
+\end{itemize}
+
+\section{Tehnologii}
+
+\subsection{TCP}
+
+Protocolul de Control de Transmisie (TCP) este un protocol de comunicare fiabil, orientat catre conexiune, utilizat in implementarea aplicatiei QuizzGame. Caracteristicile cheie ale TCP includ:
+
+\begin{itemize}[label=$\bullet$]
+    \item \textbf{Fiabilitate:} Asigura livrarea corecta si ordonata a datelor intre server si clienti, minimizand pierderile si fragmentarea.
+    \item \textbf{Conexiune Orientata:} Stabileste o conexiune intre server si client, asigurand o comunicare bidirectionala si ordonata.
+    \item \textbf{Control al Congestiei:} Gestioneaza eficient fluxurile de date pentru evitarea congestiilor in retea.
+\end{itemize}
+
+Alegerea protocolului TCP pentru comunicare in cadrul aplicatiei se datoreaza necesitatii unei conexiuni stabile si eficiente intre server si clienti, esentiala pentru un joc interactiv si fara intreruperi.
+
+
+\subsection{Sqlite3}
+
+SQLite3 este un sistem de gestionare a bazelor de date relationale, usor de utilizat, incorporabil si fara un server distinct. Caracteristicile cheie ale SQLite3 includ:
+
+\begin{itemize}[label=$\bullet$]
+    \item \textbf{Autonom:} Funcționează ca o bibliotecă software fara a necesita un server de baza de date separat.
+    \item \textbf{Baza de Date Relationala:} Suporta baze de date relationale, inclusiv tabele, relatii si interogari SQL.
+    \item \textbf{Stocare Locala:} Bazele de date SQLite3 sunt stocate local, ceea ce faciliteaza utilizarea lor in aplicatii incorporabile.
+\end{itemize}
+
+Selectarea SQLite3 pentru proiect se datoreaza portabilitatii, usurintei de utilizare si adecvarii pentru aplicații care nu necesita un server de baza de date separat. Utilizarea acestui sistem permite stocarea eficienta si gestionarea atat a intrebarilor jocului, cat si a conturilor utilizatorilor
+
+\section{Structura}
+\includegraphics[width=15cm]{assets/QuizMax1.png}
+\par
+\includegraphics[width=15cm]{assets/QuizMax2.png}
+
+\begin{itemize}[label=$\bullet$]
+    \item \textbf{Conectarea la Server:}
+        \begin{itemize}
+            \item Clientul se conecteaza la server.
+            \item Serverul creeaza un fir de executie pentru a gestiona comunicarea cu clientul.
+        \end{itemize}
+    \item \textbf{Inregistrarea unui Cont:}
+        \begin{itemize}[label=$\bullet$]
+            \item Clientul trimite comanda de inregistrare.
+            \item Firul de executie solicita introducerea unui nume de utilizator si unei parole.
+                \begin{itemize}[label=$\bullet$]
+                    \item Daca numele de utilizator este deja luat, se avertizeaza clientul si se cere introducerea altui nume.
+                    \item Daca numele de utilizator este disponibil, firul de executie solicita introducerea unei parole.
+                    \item Daca parolele nu coincid, clientul este avertizat si i se cere sa introduca o parolă corecta.
+                    \item Daca parolele coincid, un nou cont este creat in baza de date a conturilor, iar clientul primeste o notificare despre succesul inregistrarii.
+                \end{itemize}
+        \end{itemize}
+    \item \textbf{Autentificarea in Cont:}
+        \begin{itemize}[label=$\bullet$]
+            \item Clientul trimite comanda de autentificare.
+            \item Firul de executie solicita introducerea unui nume de utilizator si unei parole.
+                \begin{itemize}[label=$\bullet$]
+                    \item Daca numele de utilizator nu exista, clientul este avertizat si i se cere sa introduca un nume de utilizator valid.
+                    \item Daca numele de utilizator exista, firul de executie solicita introducerea parolei.
+                    \item Daca parola este incorecta, clientul este avertizat si i se cere sa introduca o parola corecta.
+                    \item Daca parola este corecta, clientul primeste o notificare despre succesul autentificarii.
+                \end{itemize}
+        \end{itemize}
+    \item \textbf{Desfasurarea Jocului:}
+        \begin{itemize}[label=$\bullet$]
+            \item Dupa autentificare, clientul poate intra intr-un joc.
+            \item Firul de executie incepe jocul cu scorul 0 si selecteaza o intrebare.
+            \item Clientul raspunde la intrebare trimitand optiunea de raspuns.
+            \item Firul de executie verifica raspunsul si actualizeaza scorul.
+            \item Jocul continua cu urmatoarea intrebare.
+            \item Procesul se repeta pana cand jocul se incheie.
+            \item Dupa finalizarea jocului, serverul colecteaza scorurile, creeaza un clasament si il trimite inapoi catre firul de executie, care ii transmite mai departe clientului clasamentul.
+        \end{itemize}
+\end{itemize}
+
+\section{Aspecte de Implementare}
+
+\subsection{Implementari}
+
+\subsubsection{Comunicare pe baza de flag-uri}
+Serverul si clientul comunica cu ajutorul unor flag-uri de tipul int cu coduri unice. Acestea sunt transmise in cazul confirmarilor si al erorilor din cadrul serverului, clientul afisand mesaje specifice.\\\\
+\includegraphics[width=6cm]{assets/snippet1.png}
+
+\subsection{Utilizari in viata reala}
+\begin{enumerate}
+    \item \textbf{Concursuri scolare}
+        \begin{itemize}[label=$\bullet$]
+            \item QuizMax poate fi adaptat pentru un mediu competitiv in cadrul unui concurs scolar. Clasamentele pot fi bazate nu numai pe scor, cat si pe timp.
+        \end{itemize}
+    \item \textbf{Recrutare si Evaluare a angajatilor}
+        \begin{itemize}[label=$\bullet$]
+            \item Proiectul poate fi integrat in procesul de recrutare pentru a evalua abilitatile si cunostintele candidatilor. Candidatii ar putea parcurge un set de intrebari relevante domeniului de activitate si ar fi evaluati in mod interactiv.
+        \end{itemize}
+\end{enumerate}
+
+\section{Concluzii}
+\begin{enumerate}
+    \item \textbf{Criptare:} O imbunatatire a aplicatiei ar putea fi implementarea unei criptari a comunicatiei dintre server si client in cazul parorelor si a stocarii acestora. O functie de hashing ar putea fi implementata pe viitor.
+    \item \textbf{Urmarirea timpului de raspuns:} In cazul egalitatii scorurilor nu exista vreo departajare. Una din metodele de departajare ar putea fi clasarea utilizatorilor in functie de viteza de raspuns.
+    \item \textbf{Leaderboard:} O optiune folositoare pentru utilizatorii competitivi ar putea fi salvarea celor mai bune scoruri si timpuri intr-un leaderboard public.
+\end{enumerate}
+
+%
+% ---- Bibliography ----
+%
+\begin{thebibliography}{8}
+
+\bibitem{ref_url1}
+LNCS Homepage, \url{http://www.springer.com/lncs}. 
+
+\bibitem{ref_url1}
+Cursuri si Laboratoare Retele de calculatoare, UAIC FII, \url{https://profs.info.uaic.ro/~computernetworks/}
+
+\bibitem{ref_url1}
+Sqlite3 documentation, \url{https://www.sqlite.org/docs.html}
+
+\end{thebibliography}
+\end{document}
