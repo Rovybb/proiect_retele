@@ -50,7 +50,7 @@ int handleLogin(int sd)
 
         if (intBuffer == ACCOUNT_DOESNT_EXIST)
         {
-            printf("[client]Username not found\n");
+            printf("\n[client]Username not found\n\n");
             fflush(stdout);
         }
 
@@ -64,7 +64,7 @@ int handleLogin(int sd)
 
         if (intBuffer == USER_LOGED_IN)
         {
-            printf("[client]User already loged in\n");
+            printf("\n[client]User already loged in\n\n");
             fflush(stdout);
         }
     } while (accExists == ACCOUNT_DOESNT_EXIST || intBuffer == USER_LOGED_IN);
@@ -96,7 +96,7 @@ int handleLogin(int sd)
 
         if (intBuffer == PASSWORD_DOESNT_EXIST)
         {
-            printf("[client]Wrong password\n");
+            printf("\n[client]Wrong password\n\n");
             fflush(stdout);
         }
         else if (intBuffer == PASSWORD_EXISTS)
@@ -109,7 +109,7 @@ int handleLogin(int sd)
 
             if (intBuffer == PASSWORDS_DONT_MATCH)
             {
-                printf("[client]Wrong password\n");
+                printf("\n[client]Wrong password\n\n");
                 fflush(stdout);
             }
         }
@@ -124,12 +124,12 @@ int handleLogin(int sd)
 
     if (intBuffer == LOGIN_SUCCESS)
     {
-        printf("[client]Login successful\n");
+        printf("\n[client]Login successful\n\n");
         fflush(stdout);
     }
     else if (intBuffer == LOGIN_FAIL)
     {
-        printf("[client]Login failed\n");
+        printf("\n[client]Login failed\n\n");
         fflush(stdout);
     }
 
@@ -176,7 +176,7 @@ int handleRegister(int sd)
 
         if (intBuffer == USERNAME_TAKEN)
         {
-            printf("[client]Username already exists\n");
+            printf("\n[client]Username already exists\n\n");
             fflush(stdout);
         }
     } while (intBuffer == USERNAME_TAKEN);
@@ -225,7 +225,7 @@ int handleRegister(int sd)
 
         if (intBuffer == PASSWORDS_DONT_MATCH)
         {
-            printf("[client]Passwords don't match\n");
+            printf("\n[client]Passwords don't match\n\n");
             fflush(stdout);
         }
     } while (intBuffer == PASSWORDS_DONT_MATCH);
@@ -238,12 +238,12 @@ int handleRegister(int sd)
 
     if (intBuffer == REGISTER_SUCCESS)
     {
-        printf("[client]Register successful\n");
+        printf("\n[client]Register successful\n\n");
         fflush(stdout);
     }
     else if (intBuffer == REGISTER_FAIL)
     {
-        printf("[client]Register failed\n");
+        printf("\n[client]Register failed\n\n");
         fflush(stdout);
     }
 
@@ -269,12 +269,12 @@ int handleLogout(int sd)
 
     if (intBuffer == LOGOUT_SUCCESS)
     {
-        printf("[client]Logout successful\n");
+        printf("\n[client]Logout successful\n\n");
         fflush(stdout);
     }
     else if (intBuffer == LOGOUT_FAIL)
     {
-        printf("[client]Logout failed\n");
+        printf("\n[client]Logout failed\n\n");
         fflush(stdout);
     }
 
@@ -294,7 +294,7 @@ int handlePlay(int sd)
 
     printf("\n\033[31m\\____________________\033[0mQUIZZ\033[31m____________________/\n\033[0m\n");
 
-    for (int q = 0; q < 5; q++) ////////////////////////
+    for (int q = 0; q < 5; q++)
     {
         char userAnswer[5];
         char question[256];
@@ -302,11 +302,11 @@ int handlePlay(int sd)
 
         if (read(sd, question, 256) <= 0)
         {
-            perror("[client]Error at read() from serveeeeeer.\n");
+            perror("[client]Error at read() from server.\n");
             return errno;
         }
 
-        printf("%s\n", question);
+        printf("\n%s\n\n", question);
         fflush(stdout);
 
         printf("Answer: ");
@@ -329,7 +329,7 @@ int handlePlay(int sd)
         }
         else if (selectResult == 0)
         {
-            printf("\n[client]Time's up!\n");
+            printf("\n[client]Time's up!\n\n");
             fflush(stdout);
             strcpy(userAnswer, "exit");
         }
@@ -350,7 +350,7 @@ int handlePlay(int sd)
             return errno;
         }
 
-        if(strcmp(userAnswer, "exit") == 0)
+        if(userAnswer[0] == 'e' && userAnswer[1] == 'x' && userAnswer[2] == 'i' && userAnswer[3] == 't')
         {
             if(read(sd, &intBuffer, sizeof(int)) <= 0)
             {
@@ -360,7 +360,7 @@ int handlePlay(int sd)
 
             if(intBuffer == ENTER_GAME_SUCCESS)
             {
-                printf("[client]Game finished\n");
+                printf("\n[client]Game finished\n\n");
                 fflush(stdout);
             }
 
@@ -368,8 +368,8 @@ int handlePlay(int sd)
         }
     }
 
-    char leaderboard[1024];
-    if (read(sd, leaderboard, 1024) <= 0)
+    char leaderboard[512];
+    if (read(sd, leaderboard, 512) <= 0)
     {
         perror("[client]Error at read() from server.\n");
         return errno;
@@ -387,7 +387,7 @@ int handlePlay(int sd)
 
     if(intBuffer == ENTER_GAME_SUCCESS)
     {
-        printf("[client]Game finished\n");
+        printf("\n[client]Game finished\n\n");
         fflush(stdout);
     }
 

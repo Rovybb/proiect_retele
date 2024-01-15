@@ -116,7 +116,7 @@ int main()
 
             default:
             {
-                printf("[client]Invalid command\n");
+                printf("\n[client]Invalid command\n\n");
             }
             break;
             }
@@ -127,7 +127,7 @@ int main()
             {
             case 1:
             {
-                printf("[client]Loged out\n");
+                printf("\n[client]Loged out\n\n");
                 logged = 0;
             }
             break;
@@ -163,7 +163,7 @@ int main()
 
             default:
             {
-                printf("[client]Invalid command\n");
+                printf("\n[client]Invalid command\n\n");
             }
             break;
             }

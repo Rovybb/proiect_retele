@@ -5,6 +5,7 @@
 #include <unistd.h>
 #include <stdio.h>
 #include <string.h>
+#include <strings.h>
 #include <stdlib.h>
 #include <netdb.h>
 #include <signal.h>
@@ -43,7 +44,6 @@ typedef struct scoreData
 
 const int queueTime = 10;
 int nrOfPlayers = 0;
-int questionSet = 0;
 
 sem_t leaderboardSem;
 
@@ -94,16 +94,10 @@ void *gameHandler(void *arg)
     while (1)
     {
         i_game = 0;
-        nrOfPlayers = 0;
 
         queueData *queueData = (struct queueData *)malloc(sizeof(struct queueData));
         queueData->sd = sd;
         queueData->from = from;
-
-        time_t seed;
-        srand((unsigned)time(&seed));
-        questionSet = rand() % 3;
-        questionSet = 0; /////////////////////////////////////////////////
 
         pthread_create(&queue_th, NULL, &queueHandler, queueData);
 
@@ -121,20 +115,22 @@ void *gameHandler(void *arg)
         }
         else if (nrOfPlayers > 0)
         {
-            sem_init(&leaderboardSem, 0, 1);
+            sem_init(&leaderboardSem, 0, 0);
 
-            for (int i = 0; i < nrOfPlayers; i++)
+            memset(playerScores, 0, sizeof(playerScores));
+
+            for (int ind = 0; ind < nrOfPlayers; ind++)
             {
                 void *playerScore;
                 playerScore = (struct scoreData *)malloc(sizeof(struct scoreData));
-                if (pthread_join(th_game[i], &playerScore) != 0)
+                if (pthread_join(th_game[ind], &playerScore) != 0)
                 {
                     printf("[game]Error at pthread_join().\n");
                     fflush(stdout);
                 }
                 if (strcmp(((struct scoreData *)playerScore)->playerName, "exit") != 0)
                 {
-                    playerScores[i] = *((struct scoreData *)playerScore);
+                    playerScores[ind] = *((struct scoreData *)playerScore);
                 }
                 free(playerScore);
             }
@@ -158,7 +154,10 @@ void *gameHandler(void *arg)
                 }
             }
 
-            sem_post(&leaderboardSem);
+            for (int i = 0; i < nrOfPlayers; i++)
+            {
+                sem_post(&leaderboardSem);
+            }
             sem_destroy(&leaderboardSem);
         }
     }
@@ -172,6 +171,8 @@ void queueCancelHandler(int signum)
 
 static void *queueHandler(void *arg)
 {
+    nrOfPlayers = 0;
+
     time_t startTime, endTime;
     startTime = time(NULL);
     endTime = startTime + queueTime;
@@ -364,67 +365,19 @@ int handlePlayServer(int socket_fd, int thid, char *currentUser)
     {
         char userAnswer[5];
 
-        switch (questionSet)
-        {
-        case 0:
-        {
-            char *sql = "SELECT * FROM questions0 WHERE id = ?;";
+        char *sql = "SELECT * FROM questions0 WHERE id = ?;";
 
-            if (sqlite3_prepare_v2(db, sql, -1, &res, 0) != SQLITE_OK)
-            {
-                printf("[Thread %d]Error executing statement: %s\n", thid, sqlite3_errmsg(db));
-                fflush(stdout);
-                sqlite3_close(db);
-                sqlite3_finalize(res);
-                return -1;
-            }
-            else
-            {
-                sqlite3_bind_int(res, 1, q + 1);
-            }
+        if (sqlite3_prepare_v2(db, sql, -1, &res, 0) != SQLITE_OK)
+        {
+            printf("[Thread %d]Error executing statement: %s\n", thid, sqlite3_errmsg(db));
+            fflush(stdout);
+            sqlite3_close(db);
+            sqlite3_finalize(res);
+            return -1;
         }
-        break;
-
-        case 1:
+        else
         {
-            char *sql = "SELECT * FROM questions1 WHERE id = ?;";
-
-            if (sqlite3_prepare_v2(db, sql, -1, &res, 0) != SQLITE_OK)
-            {
-                printf("[Thread %d]Error executing statement: %s\n", thid, sqlite3_errmsg(db));
-                fflush(stdout);
-                sqlite3_close(db);
-                sqlite3_finalize(res);
-                return -1;
-            }
-            else
-            {
-                sqlite3_bind_int(res, 1, q + 1);
-            }
-        }
-        break;
-
-        case 2:
-        {
-            char *sql = "SELECT * FROM questions2 WHERE id = ?;";
-
-            if (sqlite3_prepare_v2(db, sql, -1, &res, 0) != SQLITE_OK)
-            {
-                printf("[Thread %d]Error executing statement: %s\n", thid, sqlite3_errmsg(db));
-                fflush(stdout);
-                sqlite3_close(db);
-                sqlite3_finalize(res);
-                return -1;
-            }
-            else
-            {
-                sqlite3_bind_int(res, 1, q + 1);
-            }
-        }
-        break;
-
-        default:
-            break;
+            sqlite3_bind_int(res, 1, q + 1);
         }
 
         int step = sqlite3_step(res);
@@ -547,19 +500,19 @@ int handlePlayServer(int socket_fd, int thid, char *currentUser)
 
     sem_wait(&leaderboardSem);
 
-    char leaderboard[1024];
-    bzero(leaderboard, 1024);
+    char leaderboard[512];
+    bzero(leaderboard, 512);
 
-    for (int i = 0; i < nrOfPlayers; i++)
+    for (int ind = 0; ind < nrOfPlayers; ind++)
     {
         printf("[Thread %d] Building leaderboard.\n", thid);
-        char line[100];
-        bzero(line, 100);
-        sprintf(line, "%d. %s %d\n", i + 1, playerScores[i].playerName, playerScores[i].score);
+        char line[40];
+        bzero(line, 40);
+        sprintf(line, "%d. %s %d\n", ind + 1, playerScores[ind].playerName, playerScores[ind].score);
         strcat(leaderboard, line);
     }
 
-    if (write(socket_fd, leaderboard, 1024) <= 0)
+    if (write(socket_fd, leaderboard, 512) <= 0)
     {
         printf("[Thread %d]Error at write() to client.\n", thid);
         fflush(stdout);
