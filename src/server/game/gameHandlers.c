@@ -503,13 +503,19 @@ int handlePlayServer(int socket_fd, int thid, char *currentUser)
     char leaderboard[512];
     bzero(leaderboard, 512);
 
+    int place = 1;
     for (int ind = 0; ind < nrOfPlayers; ind++)
     {
         printf("[Thread %d] Building leaderboard.\n", thid);
-        char line[40];
-        bzero(line, 40);
-        sprintf(line, "%d. %s %d\n", ind + 1, playerScores[ind].playerName, playerScores[ind].score);
-        strcat(leaderboard, line);
+        if (strcmp(playerScores[ind].playerName, "exit") != 0)
+        {
+            char line[40];
+            bzero(line, 40);
+            sprintf(line, "%d. %s %d\n", place, playerScores[ind].playerName, playerScores[ind].score); //testeaza
+            strcat(leaderboard, line);
+            place += 1;
+            printf("[game] User: %s\n", playerScores[ind].playerName);
+        }
     }
 
     if (write(socket_fd, leaderboard, 512) <= 0)
