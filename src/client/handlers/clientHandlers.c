@@ -2,6 +2,7 @@
 #include <errno.h>
 #include <unistd.h>
 #include <string.h>
+#include <sys/select.h>
 
 #include "clientHandlers.h"
 #include "../../app/config.h"
@@ -11,7 +12,7 @@ extern int errno;
 
 int handleLogin(int sd)
 {
-    int intBuffer;
+    int intBuffer, accExists;
     int protocol = LOGIN_COMMAND;
 
     if (write(sd, &protocol, sizeof(int)) <= 0)
@@ -53,6 +54,8 @@ int handleLogin(int sd)
             fflush(stdout);
         }
 
+        accExists = intBuffer;
+
         if (read(sd, &intBuffer, sizeof(int)) <= 0)
         {
             perror("[client]Error at read() from server.\n");
@@ -64,7 +67,7 @@ int handleLogin(int sd)
             printf("[client]User already loged in\n");
             fflush(stdout);
         }
-    } while (intBuffer == ACCOUNT_DOESNT_EXIST || intBuffer == USER_LOGED_IN);
+    } while (accExists == ACCOUNT_DOESNT_EXIST || intBuffer == USER_LOGED_IN);
 
     do
     {
@@ -113,7 +116,7 @@ int handleLogin(int sd)
 
     } while (intBuffer == PASSWORD_DOESNT_EXIST || intBuffer == PASSWORDS_DONT_MATCH);
 
-    if(read(sd, &intBuffer, sizeof(int)) <= 0)
+    if (read(sd, &intBuffer, sizeof(int)) <= 0)
     {
         perror("[client]Error at read() from server.\n");
         return errno;
@@ -291,14 +294,15 @@ int handlePlay(int sd)
 
     printf("\n\033[31m\\____________________\033[0mQUIZZ\033[31m____________________/\n\033[0m\n");
 
-    for (int q = 0; q < 10; q++)
+    for (int q = 0; q < 5; q++) ////////////////////////
     {
         char userAnswer[5];
         char question[256];
-        
+        bzero(question, 256);
+
         if (read(sd, question, 256) <= 0)
         {
-            perror("[client]Error at read() from server.\n");
+            perror("[client]Error at read() from serveeeeeer.\n");
             return errno;
         }
 
@@ -306,7 +310,34 @@ int handlePlay(int sd)
         fflush(stdout);
 
         printf("Answer: ");
-        read(0, userAnswer, 5);
+        fflush(stdout);
+
+        struct timeval timeout;
+        timeout.tv_sec = 10;
+        timeout.tv_usec = 0;
+
+        fd_set readfds;
+        FD_ZERO(&readfds);
+        FD_SET(0, &readfds);
+
+        int selectResult = select(0, &readfds, NULL, NULL, &timeout);
+
+        if (selectResult == -1)
+        {
+            perror("[client]Error at select() from stdin.\n");
+            return errno;
+        }
+        else if (selectResult == 0)
+        {
+            printf("\n[client]Time's up!\n");
+            fflush(stdout);
+            strcpy(userAnswer, "exit");
+        }
+        else if(FD_ISSET(0, &readfds))
+        {
+            bzero(userAnswer, 5);
+            read(0, userAnswer, 5);
+        }
 
         if (userAnswer[strlen(userAnswer) - 1] == '\n')
         {
@@ -317,6 +348,23 @@ int handlePlay(int sd)
         {
             perror("[client]Error at write() to server.\n");
             return errno;
+        }
+
+        if(strcmp(userAnswer, "exit") == 0)
+        {
+            if(read(sd, &intBuffer, sizeof(int)) <= 0)
+            {
+                perror("[client]Error at read() from server.\n");
+                return errno;
+            }
+
+            if(intBuffer == ENTER_GAME_SUCCESS)
+            {
+                printf("[client]Game finished\n");
+                fflush(stdout);
+            }
+
+            return 3;
         }
     }
 
@@ -330,6 +378,18 @@ int handlePlay(int sd)
     printf("\n\033[31m\\____________________\033[0mLEADERBOARD\033[31m____________________/\n\033[0m\n");
     printf("%s\n", leaderboard);
     fflush(stdout);
+
+    if(read(sd, &intBuffer, sizeof(int)) <= 0)
+    {
+        perror("[client]Error at read() from server.\n");
+        return errno;
+    }
+
+    if(intBuffer == ENTER_GAME_SUCCESS)
+    {
+        printf("[client]Game finished\n");
+        fflush(stdout);
+    }
 
     return 0;
 }

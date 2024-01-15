@@ -62,8 +62,7 @@ int main()
                 "2 - Register\n"
                 "3 - Exit\n"
                 "\n"
-                "Input: "
-            );
+                "Input: ");
         }
         else
         {
@@ -73,8 +72,7 @@ int main()
                 "2 - Play\n"
                 "3 - Exit\n"
                 "\n"
-                "Input: "
-            );
+                "Input: ");
         }
 
         char buffer[BUFFLEN];
@@ -136,7 +134,17 @@ int main()
 
             case 2:
             {
-                handlePlay(sd);
+                if (handlePlay(sd) == 3)
+                {
+                    running = 0;
+                    int protocol = EXIT_COMMAND;
+
+                    if (write(sd, &protocol, sizeof(int)) <= 0)
+                    {
+                        perror("[client]Error at write() to server.\n");
+                        return errno;
+                    }
+                }
             }
             break;
 
@@ -160,7 +168,6 @@ int main()
             break;
             }
         }
-        
     }
 
     close(sd);

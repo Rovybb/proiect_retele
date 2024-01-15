@@ -30,5 +30,6 @@
 
 #define ENTER_GAME_SUCCESS 37
 #define GAME_CONFIRM_SUCCESS 36
+#define GAME_START 38
 
 #endif // APP_FLAGS
