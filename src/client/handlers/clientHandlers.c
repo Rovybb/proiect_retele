@@ -320,7 +320,7 @@ int handlePlay(int sd)
         FD_ZERO(&readfds);
         FD_SET(0, &readfds);
 
-        int selectResult = select(0, &readfds, NULL, NULL, &timeout);
+        int selectResult = select(1, &readfds, NULL, NULL, &timeout);
 
         if (selectResult == -1)
         {
