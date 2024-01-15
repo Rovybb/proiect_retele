@@ -34,8 +34,6 @@ int handleLoginServer(int sd, int thid, char *currentUser)
     {
         bzero(username, MAX_USERNAME_LENGTH);
         read(sd, username, MAX_USERNAME_LENGTH);
-        printf("[Thread %d]Username: %s\n", thid, username);
-        fflush(stdout);
 
         char *sql = "SELECT username FROM accounts WHERE username = ?;";
 
@@ -56,12 +54,8 @@ int handleLoginServer(int sd, int thid, char *currentUser)
         const unsigned char *usr = sqlite3_column_text(res, 0);
         int logedin = sqlite3_column_int(res, 2);
 
-        printf("[Thread %d]Username from db: %s\n", thid, usr);
-
         if (step == SQLITE_ROW)
         {
-            printf("[Thread %d]Username exists\n", thid);
-            fflush(stdout);
             int flag = ACCOUNT_EXISTS;
             write(sd, &flag, sizeof(int));
             exists = 1;
@@ -91,8 +85,6 @@ int handleLoginServer(int sd, int thid, char *currentUser)
         }
         else
         {
-            printf("[Thread %d]User not loged in\n", thid);
-            fflush(stdout);
             int flag = USER_NOT_LOGED_IN;
             write(sd, &flag, sizeof(int));
         }
@@ -106,8 +98,6 @@ int handleLoginServer(int sd, int thid, char *currentUser)
     {
         bzero(password, MAX_PASSWORD_LENGTH);
         read(sd, password, MAX_PASSWORD_LENGTH);
-        printf("[Thread %d]Password: %s\n", thid, password);
-        fflush(stdout);
 
         char *sql = "SELECT password FROM accounts WHERE username = ?;";
 
@@ -127,8 +117,6 @@ int handleLoginServer(int sd, int thid, char *currentUser)
 
         if (step == SQLITE_ROW)
         {
-            printf("[Thread %d]Password exists\n", thid);
-            fflush(stdout);
             int flag = PASSWORD_EXISTS;
             write(sd, &flag, sizeof(int));
 
@@ -136,8 +124,6 @@ int handleLoginServer(int sd, int thid, char *currentUser)
 
             if (strcmp(password, pass) == 0)
             {
-                printf("[Thread %d]Passwords match\n", thid);
-                fflush(stdout);
                 int flag = PASSWORDS_MATCH;
                 write(sd, &flag, sizeof(int));
                 passwordMatches = 1;
@@ -174,7 +160,6 @@ int handleLoginServer(int sd, int thid, char *currentUser)
     char sql[256];  
     bzero(sql, 256);
     strncpy(sql, statement, strlen(statement));
-    printf("[Thread %d]SQL: %s\n", thid, sql);
 
     if (sqlite3_exec(db, sql, 0, 0, &err_msg) != SQLITE_OK)
     {
@@ -218,9 +203,6 @@ int handleRegisterServer(int sd, int thid)
     {
         bzero(username, MAX_USERNAME_LENGTH);
         read(sd, username, MAX_USERNAME_LENGTH);
-        // username[strlen(username) - 1] = '\0';
-        printf("[Thread %d]Username: %s\n", thid, username);
-        fflush(stdout);
 
         char *sql = "SELECT username FROM accounts WHERE username = ?;";
 
@@ -247,8 +229,6 @@ int handleRegisterServer(int sd, int thid)
         }
         else if (step == SQLITE_DONE)
         {
-            printf("[Thread %d]Username doesn't exist\n", thid);
-            fflush(stdout);
             int flag = USERNAME_AVAILABLE;
             write(sd, &flag, sizeof(int));
             different = 0;
@@ -266,24 +246,16 @@ int handleRegisterServer(int sd, int thid)
 
     bzero(password, MAX_PASSWORD_LENGTH);
     read(sd, password, MAX_PASSWORD_LENGTH);
-    printf("[Thread %d]Password: %s\n", thid, password);
-    fflush(stdout);
 
     different = 1;
     while (different)
     {
         bzero(repeatPassword, MAX_PASSWORD_LENGTH);
         read(sd, repeatPassword, MAX_PASSWORD_LENGTH);
-        printf("[Thread %d]Repeat password: %s\n", thid, repeatPassword);
-        fflush(stdout);
-
-        printf("[Thread %d]Checking if passwords match: %s, %s\n", thid, password, repeatPassword);
 
         int flag;
         if (strcmp(password, repeatPassword) == 0)
         {
-            printf("[Thread %d]Passwords match\n", thid);
-            fflush(stdout);
             flag = PASSWORDS_MATCH;
             write(sd, &flag, sizeof(int));
             different = 0;
@@ -303,7 +275,6 @@ int handleRegisterServer(int sd, int thid)
     char sql[256];
     bzero(sql, 256);
     strncpy(sql, statement, strlen(statement));
-    printf("[Thread %d]SQL: %s\n", thid, sql);
 
     if (sqlite3_exec(db, sql, 0, 0, &err_msg) != SQLITE_OK)
     {
@@ -340,7 +311,6 @@ int handleLogoutServer(int sd, int thid)
     char sql[256];
     bzero(sql, 256);
     strncpy(sql, statement, strlen(statement));
-    printf("[Thread %d]SQL: %s\n", thid, sql);
 
     if (sqlite3_exec(db, sql, 0, 0, &err_msg) != SQLITE_OK)
     {

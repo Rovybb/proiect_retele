@@ -39,7 +39,7 @@ int main()
 
     if ((sd = socket(AF_INET, SOCK_STREAM, 0)) == -1)
     {
-        perror("[server]Eroare la socket().\n");
+        perror("[server]Error at socket().\n");
         return errno;
     }
 
@@ -55,13 +55,13 @@ int main()
 
     if (bind(sd, (struct sockaddr *)&server, sizeof(struct sockaddr)) == -1)
     {
-        perror("[server]Eroare la bind().\n");
+        perror("[server]Error at bind().\n");
         return errno;
     }
 
     if (listen(sd, 2) == -1)
     {
-        perror("[server]Eroare la listen().\n");
+        perror("[server]Error at listen().\n");
         return errno;
     }
 
@@ -73,12 +73,12 @@ int main()
         thData *td;
         int length = sizeof(from);
 
-        printf("[server]Asteptam la portul %d...\n", PORT);
+        printf("[server]Waiting at clients at %d\n", PORT);
         fflush(stdout);
 
         if ((client = accept(sd, (struct sockaddr *)&from, &length)) < 0)
         {
-            perror("[server]Eroare la accept().\n");
+            perror("[server]Error at accept().\n");
             continue;
         }
 
@@ -87,7 +87,6 @@ int main()
         td->cl = client;
 
         pthread_create(&th[i], NULL, &treat, td);
-
     }
 };
 
@@ -95,8 +94,6 @@ static void *treat(void *arg)
 {
     struct thData tdL;
     tdL = *((struct thData *)arg);
-    printf("[thread]- %d - Asteptam mesajul...\n", tdL.idThread);
-    fflush(stdout);
     pthread_detach(pthread_self());
     response((struct thData *)arg);
     close((intptr_t)arg);
@@ -115,38 +112,41 @@ void response(void *arg)
     {
         if (read(tdL.cl, &protocol, sizeof(int)) <= 0)
         {
-            printf("[Thread %d]\n", tdL.idThread);
-            perror("Eroare la read() de la client.\n");
+            printf("[Thread %d]Error at read() from client\n", tdL.idThread);
         }
-
-        printf("[Thread %d]Protocol...%d\n", tdL.idThread, protocol);
 
         switch (protocol)
         {
         case LOGIN_COMMAND:
         {
-            if(handleLoginServer(tdL.cl, tdL.idThread, currentUser) == 0)
+            if (handleLoginServer(tdL.cl, tdL.idThread, currentUser) == 0)
             {
                 int flag = LOGIN_SUCCESS;
                 write(tdL.cl, &flag, sizeof(int));
             }
-            printf("[Thread %d]Current user: %s\n", tdL.idThread, currentUser);
         }
         break;
 
         case ENTER_GAME_COMMAND:
         {
-            if(handlePlayServer(tdL.cl, tdL.idThread, currentUser) == 0)
+            int res;
+            if ((res = handlePlayServer(tdL.cl, tdL.idThread, currentUser)) == 0)
             {
                 int flag = ENTER_GAME_SUCCESS;
                 write(tdL.cl, &flag, sizeof(int));
+            }
+            else if (res == 3)
+            {
+                printf("[Thread %d]Client disconnected\n", tdL.idThread);
+                fflush(stdout);
+                running = 0;
             }
         }
         break;
 
         case REGISTER_COMMAND:
         {
-            if(handleRegisterServer(tdL.cl, tdL.idThread) == 0)
+            if (handleRegisterServer(tdL.cl, tdL.idThread) == 0)
             {
                 int flag = REGISTER_SUCCESS;
                 write(tdL.cl, &flag, sizeof(int));
@@ -156,7 +156,7 @@ void response(void *arg)
 
         case LOGOUT_COMMAND:
         {
-            if(handleLogoutServer(tdL.cl, tdL.idThread) == 0)
+            if (handleLogoutServer(tdL.cl, tdL.idThread) == 0)
             {
                 int flag = LOGOUT_SUCCESS;
                 write(tdL.cl, &flag, sizeof(int));

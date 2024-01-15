@@ -65,7 +65,7 @@ void *gameHandler(void *arg)
 
     if ((sd = socket(AF_INET, SOCK_STREAM, 0)) == -1)
     {
-        perror("[server]Eroare la socket().\n");
+        perror("[game]Error at socket().\n");
         return (NULL);
     }
 
@@ -81,13 +81,13 @@ void *gameHandler(void *arg)
 
     if (bind(sd, (struct sockaddr *)&gameServer, sizeof(struct sockaddr)) == -1)
     {
-        perror("[game]Eroare la bind().\n");
+        perror("[game]Error at bind().\n");
         return (NULL);
     }
 
     if (listen(sd, 2) == -1)
     {
-        perror("[game]Eroare la listen().\n");
+        perror("[game]Error at listen().\n");
         return (NULL);
     }
 
@@ -107,7 +107,7 @@ void *gameHandler(void *arg)
 
         pthread_create(&queue_th, NULL, &queueHandler, queueData);
 
-        printf("[game]A inceput un joc, timp de asteptare %d secunde.\n", queueTime);
+        printf("[game]A game has started, queue time: %d.\n", queueTime);
 
         signal(SIGALRM, queueCancelHandler);
         alarm(queueTime);
@@ -116,7 +116,7 @@ void *gameHandler(void *arg)
 
         if (nrOfPlayers == 0)
         {
-            printf("[game]Nu s-au conectat destui jucatori.\n");
+            printf("[game]Not enough players.\n");
             fflush(stdout);
         }
         else if (nrOfPlayers > 0)
@@ -129,7 +129,7 @@ void *gameHandler(void *arg)
                 playerScore = (struct scoreData *)malloc(sizeof(struct scoreData));
                 if (pthread_join(th_game[i], &playerScore) != 0)
                 {
-                    printf("[game]Eroare la pthread_join().\n");
+                    printf("[game]Error at pthread_join().\n");
                     fflush(stdout);
                 }
                 if (strcmp(((struct scoreData *)playerScore)->playerName, "exit") != 0)
@@ -139,7 +139,7 @@ void *gameHandler(void *arg)
                 free(playerScore);
             }
 
-            printf("[game]S-a terminat jocul.\n");
+            printf("[game]Game ended.\n");
 
             int sorted = 0;
             while (sorted == 0)
@@ -166,7 +166,7 @@ void *gameHandler(void *arg)
 
 void queueCancelHandler(int signum)
 {
-    printf("[game]Timpul de asteptare a expirat.\n");
+    printf("[game]Queue timer expired.\n");
     pthread_cancel(queue_th);
 }
 
@@ -188,7 +188,7 @@ static void *queueHandler(void *arg)
 
         if ((client = accept(queueData.sd, (struct sockaddr *)&queueData.from, &length)) < 0)
         {
-            perror("[game]Eroare la accept().\n");
+            perror("[game]Error at accept().\n");
             continue;
         }
 
@@ -203,8 +203,7 @@ static void *queueHandler(void *arg)
         nrOfPlayers++;
         pthread_create(&th_game[i_game], NULL, &gameTreat, td);
         i_game++;
-        printf("[game]S-a conectat un nou jucator.\n");
-        printf("Th id %d : %lu\n", i_game - 1, th_game[i_game - 1]);
+        printf("[game]New player connected.\n");
     } while (startTime < endTime);
 
     return (NULL);
@@ -226,18 +225,16 @@ static void *gameTreat(void *arg)
         return NULL;
     }
 
-    printf("[Player %d]Username: %s\n", tdL.idThread, username);
-
     scoreData *playerScore;
     playerScore = (struct scoreData *)malloc(sizeof(struct scoreData));
     playerScore->score = 0;
     strcpy(playerScore->playerName, username);
 
-    printf("[Player %d]Asteptam inceperea jocului. timp: %d\n", tdL.idThread, (int)tdL.remaningTime);
+    printf("[Player %d]Waiting for game start. Time: %d\n", tdL.idThread, (int)tdL.remaningTime);
 
     sleep((unsigned int)tdL.remaningTime);
 
-    printf("[Player %d]Jocul a inceput.\n", tdL.idThread);
+    printf("[Player %d]Game started.\n", tdL.idThread);
     fflush(stdout);
 
     int flag = GAME_START;
@@ -248,7 +245,7 @@ static void *gameTreat(void *arg)
         return NULL;
     }
 
-    for (int q = 0; q < 5; q++) ///////////////////////////////////////
+    for (int q = 0; q < 5; q++)
     {
         int userAnswer;
         if (read(tdL.cl, &userAnswer, sizeof(int)) <= 0)
@@ -257,8 +254,6 @@ static void *gameTreat(void *arg)
             fflush(stdout);
             return playerScore;
         }
-
-        printf("[Player %d]Answer: %d\n", tdL.idThread, userAnswer);
 
         switch (userAnswer)
         {
@@ -338,8 +333,6 @@ int handlePlayServer(int socket_fd, int thid, char *currentUser)
         return errno;
     }
 
-    printf("[player]Connected to game.\n");
-
     if (write(sd, currentUser, strlen(currentUser)) <= 0)
     {
         printf("[Thread %d]Error at write() to server.\n", thid);
@@ -367,7 +360,7 @@ int handlePlayServer(int socket_fd, int thid, char *currentUser)
         return -1;
     }
 
-    for (int q = 0; q < 5; q++) // 100000000000000000000
+    for (int q = 0; q < 5; q++)
     {
         char userAnswer[5];
 
@@ -448,21 +441,38 @@ int handlePlayServer(int socket_fd, int thid, char *currentUser)
             return -1;
         }
 
+        int confirmBuffer;
+
         bzero(userAnswer, 5);
         if (read(socket_fd, userAnswer, 5) <= 0)
         {
-            printf("[Thread %d]Error at read(co) from client.\n", thid);
+            printf("[Thread %d]Error at read() from client or client is not connected anymore.\n", thid);
             fflush(stdout);
+
+            int flag = EXIT_COMMAND;
+            if (write(sd, &flag, sizeof(int)) <= 0)
+            {
+                printf("[Thread %d]Error at write() to game.\n", thid);
+                fflush(stdout);
+                return -1;
+            }
+
+            if (read(sd, &confirmBuffer, sizeof(int)) <= 0)
+            {
+                printf("[Thread %d]Error at read() from game.\n", thid);
+                fflush(stdout);
+                return -1;
+            }
+
             sqlite3_close(db);
             sqlite3_finalize(res);
-            return -1;
+
+            close(sd);
+
+            return 3;
         }
 
-        int confirmBuffer;
-
-        printf("[Thread %d]Answer: %s Correct answer: %s\n", thid, userAnswer, answer);
-
-        if (userAnswer[0] == 'e')
+        if (userAnswer[0] == 'e' && userAnswer[1] == 'x' && userAnswer[2] == 'i' && userAnswer[3] == 't')
         {
             int flag = EXIT_COMMAND;
             if (write(sd, &flag, sizeof(int)) <= 0)
@@ -542,6 +552,7 @@ int handlePlayServer(int socket_fd, int thid, char *currentUser)
 
     for (int i = 0; i < nrOfPlayers; i++)
     {
+        printf("[Thread %d] Building leaderboard.\n", thid);
         char line[100];
         bzero(line, 100);
         sprintf(line, "%d. %s %d\n", i + 1, playerScores[i].playerName, playerScores[i].score);
